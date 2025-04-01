@@ -4,5 +4,8 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: ['@nuxt/ui', '@pinia/nuxt', 'pinia-plugin-persistedstate/nuxt'],
-  css: ['~/assets/style/main.scss'],
+  css: ['vuetify/styles'],
+  build: {
+    transpile: ['vuetify'],
+  },
 });

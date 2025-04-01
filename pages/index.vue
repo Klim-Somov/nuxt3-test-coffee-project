@@ -1,51 +1,53 @@
 <template>
-  <div class="account-page">
-    <header class="account-header">
-      <h2>Здравствуйте, {{ auth.user?.name }}!</h2>
-      <button @click="handleLogout">Выйти</button>
-    </header>
+  <v-container>
+    <v-row justify="space-between" align="center" class="mb-4">
+      <div>
+        <h2 class="text-h5">Мытую Эфиопию для {{ auth.user?.name }}!</h2>
+      </div>
+      <v-btn color="error" prepend-icon="mdi-logout" @click="logout">
+        Выйти
+      </v-btn>
+    </v-row>
+
     <!-- Фильтры -->
-    <div class="filters">
-      <div>
-        <label
-          >Фильтр по дате:
-          <input type="date" v-model="filterDate" />
-        </label>
-      </div>
-      <div>
-        <span>Статус:</span>
-        <label
-          ><input type="checkbox" value="Active" v-model="selectedStatuses" />
-          Active</label
-        >
-        <label
-          ><input type="checkbox" value="Inactive" v-model="selectedStatuses" />
-          Inactive</label
-        >
-      </div>
-    </div>
-    <!-- Таблица с данными -->
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Имя</th>
-          <th>Фамилия</th>
-          <th>Статус</th>
-          <th>Дата создания</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="user in filteredUsers" :key="user.id">
-          <td>{{ user.id }}</td>
-          <td>{{ user.name }}</td>
-          <td>{{ user.surname }}</td>
-          <td>{{ user.status }}</td>
-          <td>{{ user.created }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <v-card class="mb-4" flat>
+      <v-row dense>
+        <v-col cols="12" sm="6">
+          <v-text-field
+            label="Фильтр по дате создания"
+            v-model="filterDate"
+            type="date"
+            prepend-icon="mdi-calendar"
+            density="comfortable"
+          />
+        </v-col>
+
+        <v-col cols="12" sm="6">
+          <v-select
+            v-model="selectedStatuses"
+            :items="['Active', 'Inactive']"
+            label="Фильтр по статусу"
+            multiple
+            chips
+            prepend-icon="mdi-filter"
+            density="comfortable"
+          />
+        </v-col>
+      </v-row>
+    </v-card>
+
+    <!-- Таблица -->
+    <v-data-table
+      :headers="headers"
+      :items="filteredUsers"
+      :items-per-page="10"
+      class="elevation-1"
+    >
+      <template #item.created="{ item }">
+        {{ formatDate(item.created) }}
+      </template>
+    </v-data-table>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -57,27 +59,31 @@ definePageMeta({ middleware: 'auth' }); // редирект если не авт
 
 const auth = useAuthStore();
 const usersStore = useUsersStore();
-// Локальные состояния фильтров
-const filterDate = ref<string>(''); // выбранная дата (YYYY-MM-DD)
-const selectedStatuses = ref<Array<string>>([]); // выбранные статусы
 
-// Computed свойство для отфильтрованных пользователей
+const filterDate = ref('');
+const selectedStatuses = ref<string[]>([]);
+
+const logout = () => {
+  auth.logout();
+  navigateTo('/login');
+};
+
+const headers = [
+  { title: 'ID', key: 'id' },
+  { title: 'Имя', key: 'name' },
+  { title: 'Фамилия', key: 'surname' },
+  { title: 'Статус', key: 'status' },
+  { title: 'Дата создания', key: 'created' },
+];
+
 const filteredUsers = computed(() => {
   return usersStore.users.filter((user) => {
-    // Фильтр по дате создания (если выбрана)
-    if (filterDate.value) {
-      // сравниваем только по дате (без времени)
-      const createdDate = new Date(
-        user.created.split(' ')[0].split('.').reverse().join('-')
-      );
-      const selectedDate = new Date(filterDate.value);
-      if (createdDate.toDateString() !== selectedDate.toDateString()) {
-        return false;
-      }
+    const userDate = user.created.split(' ')[0].split('.').reverse().join('-');
+    if (filterDate.value && userDate !== filterDate.value) {
+      return false;
     }
-    // Фильтр по статусу (если выбраны какие-то статусы)
     if (
-      selectedStatuses.value.length > 0 &&
+      selectedStatuses.value.length &&
       !selectedStatuses.value.includes(user.status)
     ) {
       return false;
@@ -86,9 +92,7 @@ const filteredUsers = computed(() => {
   });
 });
 
-// Обработчик выхода
-const handleLogout = () => {
-  auth.logout();
-  navigateTo('/login');
+const formatDate = (str: string) => {
+  return str.replace(' ', ' · ');
 };
 </script>
