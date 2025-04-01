@@ -53,7 +53,7 @@ const onSubmit = async () => {
   error.value = null;
   const ok = await auth.login(username.value, password.value);
   if (ok) {
-    navigateTo('/account');
+    navigateTo('/');
   } else {
     error.value = 'Неверные данные. Попробуйте ещё раз.';
   }
